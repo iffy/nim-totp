@@ -1,5 +1,6 @@
 import std/strutils
 import std/terminal
+import std/times
 
 import keyring
 import argparse
@@ -8,10 +9,12 @@ import otp
 proc addService(service: string, optsecret: string) =
   setPassword("totpcli", service, optsecret)
 
-proc getCode(service: string): string =
+proc getCode(service: string): tuple[code: string, expires: int] =
   let secret = getPassword("totpcli", service).get()
   let totp = Totp.init(secret)
-  align($totp.now(), 6, '0')
+  let code = align($totp.now(), 6, '0')
+  let expires = 30 - epochTime().int mod 30
+  return (code, expires)
 
 when isMainModule:
   doAssert keyringAvailable()
@@ -27,7 +30,9 @@ when isMainModule:
       help("Get a TOTP token for a service")
       arg("service")
       run:
-        echo getCode(opts.service)
+        let code = getCode(opts.service)
+        echo code.code
+        stderr.writeLine("Expires in " & $code.expires & "s")
   try:
     p.run()
   except UsageError as e:
