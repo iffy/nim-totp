@@ -7,6 +7,9 @@ import argparse
 import otp
 
 proc addService(service: string, optsecret: string) =
+  let upper = optsecret.toUpperAscii()
+  if upper != optsecret:
+    stderr.writeLine("Warning: secret wasn't all uppercase, but it probably should be")
   setPassword("totpcli", service, optsecret)
 
 proc getCode(service: string): tuple[code: string, expires: int] =
@@ -33,6 +36,7 @@ when isMainModule:
         let code = getCode(opts.service)
         echo code.code
         stderr.writeLine("Expires in " & $code.expires & "s")
+
   try:
     p.run()
   except UsageError as e:
